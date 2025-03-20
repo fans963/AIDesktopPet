@@ -3,18 +3,30 @@
 #include <cstdint>
 #include <functional>
 #include <chrono>
+#include <future>
+#include "log.hpp"
+
+#define registerUniqueInterfaceId(variableName)                 \
+    static inline constexpr uint8_t variableName = __COUNTER__; \
+    static_assert(__COUNTER__ < 255, "Interface id must be less than 255");
 
 namespace util
 {
-#define registerUniqueInterfaceId(variableName) static inline constexpr uint8_t variableName = __COUNTER__;
-
-//可以用但尽量不要用，因为会阻塞。采用硬件定时器有更好的实现，但是要用多线程，感觉用硬件定时器不太安全
-    template <typename returnType, typename... Args, typename Func>
-    static inline returnType createTimeOutTask(Func&& task, std::chrono::milliseconds timeout, const returnType &defaultValue, Args &&...args)
+    template <typename Func>
+    static inline bool createTimeOutTask(Func &&func, const uint16_t&ms)
     {
-        const auto startTime = std::chrono::steady_clock::now();
-        while (std::chrono::steady_clock::now() - startTime < timeout)
-            return task(std::forward<Args>(args)...);
-        return defaultValue;
+        static_assert(std::is_same<decltype(func()),bool>::value,"Task func must return bool");
+        std::packaged_task<bool()> task(std::bind(std::forward<Func>(func)));
+        std::future<bool> future = task.get_future();
+       
+        std::thread(std::move(task)).detach();
+
+        if (future.wait_for(std::chrono::milliseconds{ms}) == std::future_status::ready)
+            return future.get();
+        else
+        {
+            logger::warn("Timeout");
+            return false;
+        }
     }
 }
