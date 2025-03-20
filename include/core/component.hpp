@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include "log.hpp"
 
 namespace core
 {
@@ -42,17 +43,22 @@ namespace core
             template <typename... Args>
             void make_and_bind_directly(Args &&...args)
             {
-                // if (ready())
-                //     throw std::runtime_error("The interface has already been bound to somewhere");
+#ifdef DEBUG
+                if (ready())
+                    logger::error("The interface has already been bound to somewhere");
 
                 data_pointer_ = new T(std::forward<Args>(args)...);
+#endif
+
                 activated = true;
             }
 
             void bind_directly(T &destination)
             {
-                // if (ready())
-                //     throw std::runtime_error("The interface has already been bound to somewhere");
+#ifdef DEBUG
+                if (ready())
+                    logger::error("The interface has already been bound to somewhere");
+#endif
 
                 data_pointer_ = &destination;
                 activated = true;
@@ -110,10 +116,13 @@ namespace core
             bool activated = false;
         };
 
-        template<typename T>
-        void registerInput(const int&id,InputInterface<T>& interface) {
-            // if(interface.active)
-            //     throw std::runtime_error("The interface has been activated");
+        template <typename T>
+        void registerInput(const int &id, InputInterface<T> &interface)
+        {
+#ifdef DEBUG
+            if (interface.active)
+                logger::error("The interface has been activated");
+#endif
             inputList_.emplace_back(id, interface.activate);
         }
 
