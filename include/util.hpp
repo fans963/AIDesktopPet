@@ -6,12 +6,47 @@
 #include <future>
 #include "log.hpp"
 
-#define registerUniqueInterfaceId(variableName)                 \
-    static inline constexpr uint8_t variableName = __COUNTER__; \
-    static_assert(__COUNTER__ < 255, "Interface id must be less than 255");
-
 namespace util
 {
+    template <uint8_t N>
+    struct flag
+    {
+        friend constexpr uint8_t adlFlag(flag<N>);
+    };
+
+    template <uint8_t N>
+    struct writer
+    {
+        friend constexpr uint8_t adlFlag(flag<N>)
+        {
+            return N;
+        }
+        static constexpr uint8_t value = N;
+    };
+
+    template <uint8_t N, uint8_t = adlFlag(flag<N>{})>
+    uint8_t constexpr reader(uint8_t, flag<N>)
+    {
+        return N;
+    }
+
+    template <uint8_t N>
+    uint8_t constexpr reader(float, flag<N>, uint8_t R = reader(0, flag<N - 1>{}))
+    {
+        return R;
+    }
+
+    uint8_t constexpr reader(float, flag<0>)
+    {
+        return 0;
+    }
+
+    template <uint8_t N = 1>
+    uint8_t constexpr next(uint8_t R = writer<reader(0, flag<255>{}) + N>::value)
+    {
+        return R;
+    }
+
     template <typename Func>
     static inline bool createTimeOutTask(Func &&func, const uint16_t&ms)
     {
