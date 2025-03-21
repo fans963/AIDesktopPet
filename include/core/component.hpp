@@ -74,8 +74,8 @@ namespace core
                 return reinterpret_cast<void **>(&data_pointer_);
             }
 
-            T *data_pointer_ = nullptr;
-            bool activated = false;
+            T *data_pointer_ {nullptr};
+            bool activated {false};
         };
 
         template <typename T>
@@ -113,11 +113,11 @@ namespace core
             }
 
             std::aligned_storage<sizeof(T), alignof(T)> data_;
-            bool activated = false;
+            bool activated{false};
         };
 
         template <typename T>
-        void registerInput(const int &id, InputInterface<T> &interface)
+        void registerInput(const uint8_t &id, InputInterface<T> &interface)
         {
 #ifdef DEBUG
             if (interface.active)
@@ -126,21 +126,27 @@ namespace core
             inputList_.emplace_back(id, interface.activate);
         }
 
-        void registerOutput() {}
+        template <typename T, typename... Args>
+        void registerOutput(const uint8_t &id, OutputInterface<T> &interface, Args &&...args)
+        {
+#ifdef DEBUG
+            if (interface.active())
+                logger::error("The interface has been activated");
+#endif
+            outputList_.emplace_back(OutputDeclaration{id, interface.activate(std::forward<Args>(args)...)});
+        }
 
     private:
         struct InputDeclaration
         {
-            const int id;
+            const uint8_t id;
             void **pointer_to_data_pointer;
         };
 
         struct OutputDeclaration
         {
-            const int id;
+            const uint8_t id;
             void *data_pointer;
-
-            Component *component;
         };
         std::vector<InputDeclaration> inputList_;
         std::vector<OutputDeclaration> outputList_;
