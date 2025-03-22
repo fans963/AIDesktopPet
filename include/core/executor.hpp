@@ -9,6 +9,7 @@
 
 namespace core
 {
+    using namespace network;
     class Executor
     {
     public:
@@ -34,5 +35,7 @@ namespace core
 
     private:
         std::vector<Component *> componentList_;
+        WIFI wifiComponent;
+        AI aiComponent;
     };
 } // namespace  core
