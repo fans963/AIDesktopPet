@@ -93,7 +93,7 @@ namespace core
             ~OutputInterface()
             {
                 if (active())
-                    delete reinterpret_cast<T *>(data_);
+                    delete reinterpret_cast<T *>(&data_);
             }
 
             [[nodiscard]] bool active() const { return activated; }
@@ -120,10 +120,10 @@ namespace core
         void registerInput(const uint8_t &id, InputInterface<T> &interface)
         {
 #ifdef DEBUG
-            if (interface.active)
+            if (interface.active())
                 logger::error("The interface has been activated");
 #endif
-            inputList_.emplace_back(id, interface.activate);
+            inputList_.emplace_back(InputDeclaration{id, interface.activate()});
         }
 
         template <typename T, typename... Args>
